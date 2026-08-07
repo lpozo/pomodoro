@@ -1,68 +1,86 @@
-import shutil
-import subprocess
 import tkinter as tk
 from tkinter import ttk
 
-from .logic import (
+from ..model.constants import (
+    DEFAULT_LONG_BREAK_MINUTES,
+    DEFAULT_SHORT_BREAK_MINUTES,
+    DEFAULT_WORK_MINUTES,
     LONG_BREAK,
+    REST_COMPLETE_SOUND,
+    SECONDS_PER_MINUTE,
     SHORT_BREAK,
+    TICK_INTERVAL_MS,
     WORK,
-    format_hh_mm_ss,
-    format_mm_ss,
-    next_phase,
+    WORK_COMPLETE_SOUND,
 )
-
-WORK_COMPLETE_SOUND = "/System/Library/Sounds/Glass.aiff"
-REST_COMPLETE_SOUND = "/System/Library/Sounds/Hero.aiff"
-
-
-def play_sound(file_path: str) -> None:
-    player = shutil.which("afplay")
-    if not player:
-        return
-
-    try:
-        subprocess.Popen(
-            [player, file_path],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-    except OSError:
-        pass
+from ..model.formatters import format_hh_mm_ss, format_mm_ss
+from ..model.sound import play_sound
+from ..model.timer import next_phase
+from .about_dlg import show_about_dialog
+from .setting_dlg import show_settings_dialog
 
 
 class PomodoroApp:
+    """Tkinter controller and view for the Pomodoro timer application.
+
+    Args:
+        root: Tk root window used to render the UI.
+    """
+
     def __init__(self, root: tk.Tk):
+        """Initialize application state and build the UI.
+
+        Args:
+            root: Tk root window used by the app.
+        """
         self.root = root
         self.root.title("Pomodoro")
         self.root.resizable(False, False)
 
         self.durations_min = {
-            WORK: 25,
-            SHORT_BREAK: 5,
-            LONG_BREAK: 15,
+            WORK: DEFAULT_WORK_MINUTES,
+            SHORT_BREAK: DEFAULT_SHORT_BREAK_MINUTES,
+            LONG_BREAK: DEFAULT_LONG_BREAK_MINUTES,
         }
         self.current_phase = WORK
-        self.remaining_seconds = self.durations_min[WORK] * 60
+        self.remaining_seconds = self.durations_min[WORK] * SECONDS_PER_MINUTE
         self.is_running = False
         self.completed_work_sessions = 0
         self.total_work_seconds = 0
         self.timer_job: str | None = None
 
         self.phase_var = tk.StringVar(value="Phase: Work")
-        self.timer_var = tk.StringVar(value="25:00")
+        self.timer_var = tk.StringVar(
+            value=format_mm_ss(DEFAULT_WORK_MINUTES * SECONDS_PER_MINUTE)
+        )
         self.total_work_var = tk.StringVar(value="Total Work Time: 00:00:00")
         self.sessions_var = tk.StringVar(value="Completed Work Sessions: 0")
         self.error_var = tk.StringVar(value="")
 
-        self.work_var = tk.StringVar(value="25")
-        self.short_break_var = tk.StringVar(value="5")
-        self.long_break_var = tk.StringVar(value="15")
+        self._build_menu()
+        self._build_ui()
+        self._refresh_ui()
 
-        self.build_ui()
-        self.refresh_ui()
+    def _build_menu(self) -> None:
+        """Create the application menu bar."""
+        menu_bar = tk.Menu(self.root)
+        self.file_menu = tk.Menu(menu_bar, tearoff=False)
+        self.file_menu.add_command(
+            label="Preferences...",
+            command=self._open_config_dialog,
+        )
+        self.file_menu.add_separator()
+        self.file_menu.add_command(label="Exit", command=self.root.destroy)
+        menu_bar.add_cascade(label="File", menu=self.file_menu)
 
-    def build_ui(self) -> None:
+        self.help_menu = tk.Menu(menu_bar, tearoff=False)
+        self.help_menu.add_command(label="About", command=self._open_about_dialog)
+        menu_bar.add_cascade(label="Help", menu=self.help_menu)
+
+        self.root.configure(menu=menu_bar)
+
+    def _build_ui(self) -> None:
+        """Create and place all widgets for the main window."""
         frame = ttk.Frame(self.root, padding=16)
         frame.grid(column=0, row=0, sticky="nsew")
 
@@ -96,68 +114,32 @@ class PomodoroApp:
         self.pause_button.grid(column=1, row=4, padx=4, pady=(0, 10), sticky="ew")
         self.stop_button.grid(column=2, row=4, padx=4, pady=(0, 10), sticky="ew")
 
-        ttk.Label(frame, text="Work (min)").grid(column=0, row=5)
-        ttk.Label(frame, text="Short Break (min)").grid(column=1, row=5)
-        ttk.Label(frame, text="Long Break (min)").grid(column=2, row=5)
-
-        self.work_entry = ttk.Entry(
-            frame,
-            textvariable=self.work_var,
-            width=10,
-            justify="center",
-        )
-        self.short_break_entry = ttk.Entry(
-            frame,
-            textvariable=self.short_break_var,
-            width=10,
-            justify="center",
-        )
-        self.long_break_entry = ttk.Entry(
-            frame,
-            textvariable=self.long_break_var,
-            width=10,
-            justify="center",
-        )
-
-        self.work_entry.grid(column=0, row=6, padx=4, pady=(4, 8))
-        self.short_break_entry.grid(column=1, row=6, padx=4, pady=(4, 8))
-        self.long_break_entry.grid(column=2, row=6, padx=4, pady=(4, 8))
-
         ttk.Label(frame, textvariable=self.error_var, foreground="red").grid(
             column=0,
-            row=7,
+            row=5,
             columnspan=3,
             pady=(2, 0),
         )
 
-    def set_entries_state(self, enabled: bool) -> None:
-        state = "normal" if enabled else "disabled"
-        self.work_entry.configure(state=state)
-        self.short_break_entry.configure(state=state)
-        self.long_break_entry.configure(state=state)
-
-    def apply_input_durations(self) -> bool:
-        try:
-            work_val = int(self.work_var.get())
-            short_val = int(self.short_break_var.get())
-            long_val = int(self.long_break_var.get())
-        except ValueError:
-            self.error_var.set("Intervals must be integer values.")
-            return False
-
-        if work_val < 1 or short_val < 1 or long_val < 1:
-            self.error_var.set("Intervals must be at least 1 minute.")
-            return False
+    def _open_config_dialog(self) -> None:
+        """Open a modal dialog to configure interval durations."""
+        updated_durations = show_settings_dialog(self.root, self.durations_min)
+        if updated_durations is None:
+            return
 
         self.error_var.set("")
-        self.durations_min = {
-            WORK: work_val,
-            SHORT_BREAK: short_val,
-            LONG_BREAK: long_val,
-        }
-        return True
+        self.durations_min = updated_durations
 
-    def refresh_ui(self) -> None:
+        if not self.is_running:
+            self.load_phase(self.current_phase)
+            self._refresh_ui()
+
+    def _open_about_dialog(self) -> None:
+        """Open the About dialog."""
+        show_about_dialog(self.root)
+
+    def _refresh_ui(self) -> None:
+        """Refresh labels and button states from current app state."""
         self.phase_var.set(f"Phase: {self.current_phase}")
         self.timer_var.set(format_mm_ss(self.remaining_seconds))
         self.total_work_var.set(
@@ -170,19 +152,28 @@ class PomodoroApp:
         if self.is_running:
             self.start_button.state(["disabled"])
             self.pause_button.state(["!disabled"])
-            self.set_entries_state(False)
+            self.file_menu.entryconfigure("Preferences...", state=tk.DISABLED)
         else:
             self.start_button.state(["!disabled"])
             self.pause_button.state(["disabled"])
-            self.set_entries_state(True)
+            self.file_menu.entryconfigure("Preferences...", state=tk.NORMAL)
 
     def load_phase(self, phase: str) -> None:
+        """Set active phase and reset remaining time for that phase.
+
+        Args:
+            phase: Phase label to load.
+        """
         self.current_phase = phase
-        self.remaining_seconds = self.durations_min[phase] * 60
+        self.remaining_seconds = self.durations_min[phase] * SECONDS_PER_MINUTE
 
     def handle_phase_completion(self) -> None:
+        """Advance to the next phase and trigger completion sound."""
         previous_phase = self.current_phase
-        next_phase_name, self.completed_work_sessions = next_phase(
+        if previous_phase == WORK:
+            self.completed_work_sessions += 1
+
+        next_phase_name, _ = next_phase(
             self.current_phase,
             self.completed_work_sessions,
         )
@@ -195,9 +186,11 @@ class PomodoroApp:
         self.load_phase(next_phase_name)
 
     def schedule_tick(self) -> None:
-        self.timer_job = self.root.after(1000, self.tick)
+        """Schedule the next timer tick in one second."""
+        self.timer_job = self.root.after(TICK_INTERVAL_MS, self.tick)
 
     def tick(self) -> None:
+        """Advance the timer by one second and update phase when needed."""
         if not self.is_running:
             return
 
@@ -209,22 +202,20 @@ class PomodoroApp:
         if self.remaining_seconds <= 0:
             self.handle_phase_completion()
 
-        self.refresh_ui()
+        self._refresh_ui()
         self.schedule_tick()
 
     def start_timer(self) -> None:
+        """Start the timer if inputs are valid and not already running."""
         if self.is_running:
             return
 
-        if not self.apply_input_durations():
-            self.refresh_ui()
-            return
-
         self.is_running = True
-        self.refresh_ui()
+        self._refresh_ui()
         self.schedule_tick()
 
     def pause_timer(self) -> None:
+        """Pause the timer and cancel any scheduled tick."""
         if not self.is_running:
             return
 
@@ -232,17 +223,17 @@ class PomodoroApp:
         if self.timer_job:
             self.root.after_cancel(self.timer_job)
             self.timer_job = None
-        self.refresh_ui()
+        self._refresh_ui()
 
     def stop_timer(self) -> None:
-        if not self.apply_input_durations():
-            self.refresh_ui()
-            return
+        """Stop the timer and reset to the work phase.
 
+        Keeps the accumulated total work time and completed work sessions.
+        """
         self.is_running = False
         if self.timer_job:
             self.root.after_cancel(self.timer_job)
             self.timer_job = None
 
         self.load_phase(WORK)
-        self.refresh_ui()
+        self._refresh_ui()
