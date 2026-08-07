@@ -1,3 +1,3 @@
-from .main_win import PomodoroApp
+from pomodoro.ui.main_win import PomodoroApp
 
 __all__ = ["PomodoroApp"]

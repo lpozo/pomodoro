@@ -1,4 +1,9 @@
-from .constants import LONG_BREAK, SHORT_BREAK, WORK, WORK_SESSIONS_PER_LONG_BREAK
+from pomodoro.constants import (
+    LONG_BREAK,
+    SHORT_BREAK,
+    WORK,
+    WORK_SESSIONS_PER_LONG_BREAK,
+)
 
 
 def next_phase(current_phase: str, completed_work_sessions: int) -> tuple[str, int]:

@@ -1,7 +1,6 @@
-import sys
 import tkinter as tk
 
-from .ui import PomodoroApp
+from pomodoro.ui import PomodoroApp
 
 
 def main() -> None:
@@ -11,9 +10,9 @@ def main() -> None:
     and starts the Tkinter event loop.
     """
     root = tk.Tk()
-    if sys.platform == "darwin":
-        # Best-effort app name for macOS menu integration when run from Python.
-        root.tk.call("set", "::tk::mac::appName", "Pomodoro")
-        root.tk.call("tk", "appname", "Pomodoro")
     PomodoroApp(root)
     root.mainloop()
+
+
+if __name__ == "__main__":
+    main()

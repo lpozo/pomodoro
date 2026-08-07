@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from ..model.constants import (
+from pomodoro.constants import (
     DEFAULT_LONG_BREAK_MINUTES,
     DEFAULT_SHORT_BREAK_MINUTES,
     DEFAULT_WORK_MINUTES,
@@ -13,11 +13,11 @@ from ..model.constants import (
     WORK,
     WORK_COMPLETE_SOUND,
 )
-from ..model.formatters import format_hh_mm_ss, format_mm_ss
-from ..model.sound import play_sound
-from ..model.timer import next_phase
-from .about_dlg import show_about_dialog
-from .setting_dlg import show_settings_dialog
+from pomodoro.model.formatters import format_hh_mm_ss, format_mm_ss
+from pomodoro.model.sound import play_sound
+from pomodoro.model.timer import next_phase
+from pomodoro.ui.about_dlg import show_about_dialog
+from pomodoro.ui.setting_dlg import show_settings_dialog
 
 
 class PomodoroApp:
@@ -106,9 +106,9 @@ class PomodoroApp:
             pady=(0, 10),
         )
 
-        self.start_button = ttk.Button(frame, text="Start", command=self.start_timer)
-        self.pause_button = ttk.Button(frame, text="Pause", command=self.pause_timer)
-        self.stop_button = ttk.Button(frame, text="Stop", command=self.stop_timer)
+        self.start_button = ttk.Button(frame, text="▶", command=self.start_timer)
+        self.pause_button = ttk.Button(frame, text="⏸", command=self.pause_timer)
+        self.stop_button = ttk.Button(frame, text="⏹", command=self.stop_timer)
 
         self.start_button.grid(column=0, row=4, padx=4, pady=(0, 10), sticky="ew")
         self.pause_button.grid(column=1, row=4, padx=4, pady=(0, 10), sticky="ew")
@@ -152,10 +152,12 @@ class PomodoroApp:
         if self.is_running:
             self.start_button.state(["disabled"])
             self.pause_button.state(["!disabled"])
+            self.stop_button.state(["!disabled"])
             self.file_menu.entryconfigure("Preferences...", state=tk.DISABLED)
         else:
             self.start_button.state(["!disabled"])
             self.pause_button.state(["disabled"])
+            self.stop_button.state(["disabled"])
             self.file_menu.entryconfigure("Preferences...", state=tk.NORMAL)
 
     def load_phase(self, phase: str) -> None:

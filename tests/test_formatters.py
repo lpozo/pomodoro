@@ -1,6 +1,6 @@
 import pytest
 
-from src.pomodoro.model.formatters import format_hh_mm_ss, format_mm_ss
+from pomodoro.model.formatters import format_hh_mm_ss, format_mm_ss
 
 
 @pytest.mark.parametrize(

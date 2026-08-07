@@ -13,3 +13,7 @@ uv run pomodoro
 ```bash
 uv run pytest
 ```
+
+## Build macOS app bundle
+
+See [packaging/macos/README.md](packaging/macos/README.md) for PyInstaller-based build steps.

@@ -1,7 +1,7 @@
 import pytest
 
-from src.pomodoro.model.constants import LONG_BREAK, SHORT_BREAK, WORK
-from src.pomodoro.model.timer import next_phase
+from pomodoro.constants import LONG_BREAK, SHORT_BREAK, WORK
+from pomodoro.model.timer import next_phase
 
 
 @pytest.mark.parametrize(

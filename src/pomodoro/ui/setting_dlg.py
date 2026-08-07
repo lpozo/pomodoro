@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from ..model.constants import (
+from pomodoro.constants import (
     LONG_BREAK,
     MAX_INTERVAL_MINUTES,
     MIN_INTERVAL_MINUTES,

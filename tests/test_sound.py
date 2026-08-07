@@ -3,7 +3,8 @@ from uuid import uuid4
 
 import pytest
 
-from src.pomodoro.model import constants, sound
+import pomodoro.constants as constants
+import pomodoro.model.sound as sound
 
 
 @pytest.mark.parametrize(

@@ -3,7 +3,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from .constants import SOUND_DIR_ENV, SOUND_EXTENSIONS
+from pomodoro.constants import SOUND_DIR_ENV, SOUND_EXTENSIONS
 
 
 def _resolve_sound_file(sound: str) -> str | None:
