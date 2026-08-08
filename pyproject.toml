@@ -26,7 +26,15 @@ where = ["src"]
 [dependency-groups]
 dev = [
     "pytest>=8.4.1",
+    "ruff>=0.14",
 ]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,7 +1,6 @@
 import runpy
-from pathlib import Path
-
 import tkinter as tk
+from pathlib import Path
 
 import pomodoro.ui as pomodoro_ui
 
