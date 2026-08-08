@@ -7,6 +7,8 @@
 
 Simple desktop Pomodoro timer built with Tkinter.
 
+![Pomodoro UI](pomodoro-ui.png)
+
 ## Run the app
 
 ```bash
