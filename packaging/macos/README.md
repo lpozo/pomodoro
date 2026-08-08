@@ -36,4 +36,5 @@ create-dmg \
 ## Notes
 
 - To distribute outside your machine, you'll typically need code signing and notarization.
-- If you want a custom Dock icon, set `icon=` in `packaging/macos/pomodoro.spec`.
+- The app Dock icon lives at `packaging/macos/Pomodoro.icns`. Regenerate it by
+  re-rendering `icon_1024.png`, building a `.iconset`, and running `iconutil -c icns`.

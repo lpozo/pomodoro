@@ -56,7 +56,7 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name="Pomodoro.app",
-    icon=None,
+    icon=str(ROOT_DIR / "packaging" / "macos" / "Pomodoro.icns"),
     bundle_identifier="com.example.pomodoro",
     info_plist={
         "NSPrincipalClass": "NSApplication",
