@@ -10,18 +10,16 @@ env/
 # Environments / secrets
 .env
 
+# Build artifacts
+build/
+dist/
+
 # Tool caches
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
 
-# Flet
-.flet/
-build/
-storage/
-
 # IDE
-.idea/
 .vscode/
 
 # macOS
